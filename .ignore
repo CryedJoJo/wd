@@ -1,0 +1,25 @@
+.git/
+.vscode/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.svg
+__pycache__/
+*.pyc
+node_modules/
+.env
+*.log
+.DS_Store
+Thumbs.db
+
+# 可执行文件 / 二进制文件
+*.exe
+*.bin
+*.out
+*.dll
+*.so
+*.dylib
+*.o
+*.obj
