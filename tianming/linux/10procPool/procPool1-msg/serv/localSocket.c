@@ -1,6 +1,6 @@
 #include "head.h"
 
-int localComSend(int *netFd, int localSocketFd)
+int localComSend(int *netFd)
 {
 	struct msghdr msg;
 	bzero(&msg, sizeof(msg));

@@ -1,63 +1,66 @@
 #include "head.h"
 
-int localComSend(int *netFd, int localSocketFd)
+int localComSend(localMsg localmsg)
 {
-	struct msghdr msg;
-	bzero(&msg, sizeof(msg));
+	struct msghdr msgh;
+	bzero(&msgh, sizeof(msgh));
 
-	char        *str = "hello";
+	char exitFlagVal[1] = {localmsg.exitFlag_ ? 1 : 0};
 	struct iovec iovs[1];
-	iovs[0].iov_base = str;
-	iovs[0].iov_len  = strlen(str);
+	iovs[0].iov_base = exitFlagVal;
+	iovs[0].iov_len  = 1;
 
-	msg.msg_iov    = iovs;
-	msg.msg_iovlen = 1;
+	msgh.msg_iov    = iovs;
+	msgh.msg_iovlen = 1;
 
-	struct cmsghdr *cms = (struct cmsghdr *)malloc(CMSG_LEN(sizeof(int)));
-	cms->cmsg_len       = CMSG_LEN(sizeof(int));
-	cms->cmsg_level     = SOL_SOCKET;
-	cms->cmsg_type      = SCM_RIGHTS;
-	void *p             = CMSG_DATA(cms);
-	int  *pfd           = (int *)p;
-	*pfd                = netFd;
+	if(!localmsg.exitFlag_) {
+		char ctl[CMSG_SPACE(sizeof(int))];
+		bzero(ctl, sizeof(ctl));
+		struct cmsghdr *cms = (struct cmsghdr *)ctl;
+		cms->cmsg_len       = CMSG_LEN(sizeof(int));
+		cms->cmsg_level     = SOL_SOCKET;
+		cms->cmsg_type      = SCM_RIGHTS;
+		*(int *)CMSG_DATA(cms) = localmsg.netFd_;
 
-	msg.msg_control    = cms;
-	msg.msg_controllen = CMSG_LEN(sizeof(int));
+		msgh.msg_control    = cms;
+		msgh.msg_controllen = CMSG_SPACE(sizeof(int));
+	}
 
-	// 发送数据
-	int ret = sendmsg(localSocketFd, &msg, 0);
+	sendmsg(localmsg.localSocketFd_, &msgh, 0);
 	return 0;
 }
 
-int localComRecv(int *netFd, int localSocketFd)
+int localComRecv(localMsg *localmsg)
 {
-	struct msghdr msg;
-	bzero(&msg, sizeof(msg));
+	struct msghdr msgh;
+	bzero(&msgh, sizeof(msgh));
 
-	char         buf[60] = {0};
+	char buf[60] = {0};
 	struct iovec iovs[1];
 	iovs[0].iov_base = buf;
 	iovs[0].iov_len  = sizeof(buf);
 
-	msg.msg_iov    = iovs;
-	msg.msg_iovlen = 1;
+	msgh.msg_iov    = iovs;
+	msgh.msg_iovlen = 1;
 
-	struct cmsghdr *cms = (struct cmsghdr *)malloc(CMSG_LEN(sizeof(int)));
-	cms->cmsg_len       = CMSG_LEN(sizeof(int));
-	cms->cmsg_level     = SOL_SOCKET;
-	cms->cmsg_type      = SCM_RIGHTS;
+	char ctl[CMSG_SPACE(sizeof(int))];
+	bzero(ctl, sizeof(ctl));
+	msgh.msg_control    = ctl;
+	msgh.msg_controllen = sizeof(ctl);
 
-	msg.msg_control    = cms;
-	msg.msg_controllen = CMSG_LEN(sizeof(int));
-
-	int ret = recvmsg(localSocketFd, &msg, 0);
+	int ret = recvmsg(localmsg->localSocketFd_, &msgh, 0);
 	if(ret == 0) {
 		printf("recv error 0, exit(-1);\n");
 		exit(-1);
 	}
 
-	void *p       = CMSG_DATA(cms);
-	int  *p_netFd = (int *)p;
-	*netFd        = *p_netFd;
+	localmsg->exitFlag_ = (buf[0] != 0);
+
+	if(!localmsg->exitFlag_) {
+		struct cmsghdr *cms = CMSG_FIRSTHDR(&msgh);
+		if(cms && cms->cmsg_level == SOL_SOCKET && cms->cmsg_type == SCM_RIGHTS) {
+			localmsg->netFd_ = *(int *)CMSG_DATA(cms);
+		}
+	}
 	return 0;
 }

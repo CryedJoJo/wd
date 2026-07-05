@@ -12,26 +12,33 @@ int initProcPool(procStatus *procList, int procNum)
 
 		int procId = fork();
 		if(procId == 0) {
+			//子进程脱离前台进程组
+			setpgid(0, 0);
 
 			close(localSocketFd[1]);
 			//子进程工作函数
 			sonProcRun(localSocketFd[0]);
 
 		} else {
-			procList[i].pid    = procId;
-			procList[i].status = FREE;
+			procList[i].pid_    = procId;
+			procList[i].status_ = FREE;
 			close(localSocketFd[0]);
-			procList[i].localSocketFd = localSocketFd[1];
+			procList[i].localSocketFd_ = localSocketFd[1];
 		}
 	}
+
+	return 0;
 }
 
 int toSonProc(int netFd, procStatus *procList, int num)
 {
 	for(int i = 0; i < num; ++i) {
-		if(procList[i].status == FREE) {
-			localComSend(netFd, procList[i].localSocketFd);
-			procList[i].status = BUSY;
+		if(procList[i].status_ == FREE) {
+			localMsg msg = {.netFd_         = netFd,
+			                .localSocketFd_ = procList[i].localSocketFd_,
+			                .exitFlag_      = false};
+			localComSend(msg);
+			procList[i].status_ = BUSY;
 			break;
 		}
 	}

@@ -8,12 +8,12 @@ objs:=$(patsubst %.c,%.o, $(srcs))
 	gcc -c $^ -o $@ -g
 # mian文件依赖于所有的objs文件
 # 把所有依赖项($^) 指定输出到当前目标(-o $@)(即:mian)
-server:$(objs)
+sdf:$(objs)
 	gcc $^ -o $@ -lpthread
 	$(RM) $(objs)
 
 # 清理objs文件 清理mian文件
 clean:
-	$(RM) $(objs) server
+	$(RM) $(objs) sdf
 
-rebuild: clean server
+rebuild: clean sdf

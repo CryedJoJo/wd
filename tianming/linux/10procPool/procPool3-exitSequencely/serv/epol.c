@@ -16,8 +16,8 @@ int initEpoll(int *epollFd, procStatus *procList, int socketFd)
 	*epollFd = epoll_create(1);
 	addEpoll(*epollFd, socketFd);
 
-	for(int i = 0; i < sizeof(*procList) / sizeof(procList[0]); ++i) {
-		addEpoll(*epollFd, procList[i].localSocketFd);
+	for(int i = 0; i < 3; ++i) {
+		addEpoll(*epollFd, procList[i].localSocketFd_);
 	}
 
 	return 0;
