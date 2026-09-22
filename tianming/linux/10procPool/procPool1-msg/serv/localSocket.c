@@ -1,6 +1,6 @@
 #include "head.h"
 
-int localComSend(int *netFd)
+int localComSend(int *netFd, int localSocketFd)
 {
 	struct msghdr msg;
 	bzero(&msg, sizeof(msg));
@@ -49,6 +49,8 @@ int localComRecv(int *netFd, int localSocketFd)
 
 	msg.msg_control    = cms;
 	msg.msg_controllen = CMSG_LEN(sizeof(int));
+
+	printf("stop in here\n");
 
 	int ret = recvmsg(localSocketFd, &msg, 0);
 	if(ret == 0) {
