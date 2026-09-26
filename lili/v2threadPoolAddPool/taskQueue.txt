@@ -1,0 +1,149 @@
+/**
+ * Project Untitled
+ */
+
+#include "taskQueue.h"
+#include "Task.h"
+
+/**
+ * taskQueue implementation
+ */
+
+/**
+ * @param size
+ */
+taskQueue::taskQueue(size_t size)
+    : queSize_(size)
+    , que_()
+    , mutex_()
+    , notFull_()
+    , notEmpty_()
+    , exit_(false)
+{
+}
+
+/**
+ * @return bool
+ */
+bool taskQueue::isFull()
+{
+	return queSize_ == curSize();
+}
+
+/**
+ * @return bool
+ */
+bool taskQueue::isEmpty()
+{
+	return 0 == curSize();
+}
+
+/**
+ * @return int
+ */
+size_t taskQueue::curSize()
+{
+		return que_.size();
+}
+
+/**
+ * @return void
+ */
+void taskQueue::pushElem(Task *task)
+{
+	unique_lock<mutex> ul(mutex_);
+
+	// notFull_.wait(ul, [this]() { return !isFull(); });
+	while(isFull()) {
+		// std::cout << __FILE__ << " " << __LINE__ << std::endl;
+		if(exit_) {
+			std::cout << "task queue exit line:" << __LINE__ << std::endl;
+			return;
+		}
+		notFull_.wait(ul);
+	}
+	que_.push(task);
+	notEmpty_.notify_one();
+}
+
+/**
+ * @return Task* 
+ */
+Task *taskQueue::popElem()
+{
+	unique_lock<mutex> ul(mutex_);
+	// notEmpty_.wait(ul, [this]() { return !isEmpty(); });
+	while(isEmpty()) {
+		if(exit_) {
+			std::cout << "task queue exit line:" <<  __LINE__ << std::endl;
+			return nullptr;
+		}
+		//std::cout << __FILE__ << " " << __LINE__ << std::endl; //为什么我加了这一行代码 程序就不会卡住，注释了之后，就会卡住不能结束？ "海森堡bug"
+		notEmpty_.wait(ul);
+	}
+	Task *tk = que_.front();
+	que_.pop();
+	return tk;
+}
+
+void taskQueue::wakeupAll()
+{
+	notFull_.notify_all();
+	notEmpty_.notify_all();
+}
+/**
+ * Project Untitled
+ */
+
+#ifndef _TASKQUEUE_H
+#define _TASKQUEUE_H
+
+#include <iostream>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+
+using std::mutex;
+using std::condition_variable;
+using std::queue;
+using std::unique_lock;
+
+class Task;
+
+class taskQueue {
+public:
+	/**
+ * @param size
+ */
+	taskQueue(size_t size);
+
+	bool isFull();
+
+	bool isEmpty();
+
+	size_t curSize();
+
+	void pushElem(Task *task);
+
+	void wakeupAll();
+
+	void exit()
+	{
+		exit_ = true;
+	}
+
+	/**
+ * @param task
+ */
+	Task *popElem();
+
+private:
+	size_t             queSize_;
+	mutex              mutex_;
+	condition_variable notFull_;
+	condition_variable notEmpty_;
+	queue<Task *>      que_;
+	bool               exit_;
+};
+
+#endif //_TASKQUEUE_H
