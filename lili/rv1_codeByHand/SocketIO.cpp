@@ -4,22 +4,12 @@
 
 #include "SocketIO.h"
 
-#include <unistd.h> //close
+#include <unistd.h>
 #include <stdio.h>
 #include <sys/types.h>
-#include <sys/socket.h> //recv
+#include <sys/socket.h>
+#include <errno.h>
 
-/**
- * SocketIO implementation
- */
-
-SocketIO::SocketIO()
-{
-}
-
-/**
- * @param fd
- */
 SocketIO::SocketIO(int fd)
     : fd_(fd)
 {
@@ -27,13 +17,32 @@ SocketIO::SocketIO(int fd)
 
 SocketIO::~SocketIO()
 {
-	close(fd_);
 }
 
-/**
- * @param buf
- * @return int
- */
+int SocketIO::readn(char *buf, int len)
+{
+	int   left = len;
+	char *pstr = buf;
+	int   ret  = 0;
+
+	while(left > 0) {
+		ret = read(fd_, pstr, left);
+		if(-1 == ret && errno == EINTR) {
+			continue;
+		} else if(-1 == ret) {
+			perror("read error -1");
+			return -1;
+		} else if(0 == ret) {
+			break;
+		} else {
+			pstr += ret;
+			left -= ret;
+		}
+	}
+
+	return len - left;
+}
+
 int SocketIO::readLine(char *buf, int len)
 {
 	int   left = len - 1;
@@ -76,39 +85,6 @@ int SocketIO::readLine(char *buf, int len)
 	return total - left;
 }
 
-/**
- * @param buf
- * @param n
- * @return int
- */
-int SocketIO::readn(char *buf, int len)
-{
-	int   left = len;
-	char *pstr = buf;
-	int   ret  = 0;
-
-	while(left > 0) {
-		ret = read(fd_, pstr, left);
-		if(-1 == ret && errno == EINTR) {
-			continue;
-		} else if(-1 == ret) {
-			perror("read error -1");
-			return -1;
-		} else if(0 == ret) {
-			break;
-		} else {
-			pstr += ret;
-			left -= ret;
-		}
-	}
-
-	return len - left;
-}
-
-/**
- * @param buf
- * @return void
- */
 int SocketIO::writen(const char *buf, int len)
 {
 	int         left = len;

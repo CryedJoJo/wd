@@ -6,7 +6,7 @@ void EchoServer::proccess(const TcpConnectionPtr &con, const string msg)
 {
 	std::cout << "client msg:" << msg << std::endl;
 	std::cout << "processing client msg..." << std::endl;
-	//9. processing_ 未设置时调用空 std::function 抛 std::bad_function_call
+	//9. processing_ 未设置时 调用空 std::function 抛 std::bad_function_call
 	//修改前的代码：
 	// const string processedMsg = "processed msg " + processing_(msg);
 	//修改过后的代码：

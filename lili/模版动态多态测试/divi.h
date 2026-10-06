@@ -1,0 +1,80 @@
+#ifndef DIVI_H
+#define DIVI_H
+#include "BaseOperator.h"
+#include <iostream>
+#include <utility>
+
+#define TITLE template <class T1, class T2, class T3>
+
+TITLE
+class divi : public BaseOperator {
+
+public:
+	divi() { std::cout << "divi()" << std::endl; }
+	divi(T1 lhs, T2 rhs);
+	divi(const divi &other) = delete;
+
+	divi(divi &&other) noexcept
+	    : BaseOperator(std::move(other))
+	    , lhs_(std::move(other.lhs_))
+	    , rhs_(std::move(other.rhs_))
+	    , answer_(std::move(other.answer_))
+	{
+		std::cout << "divi(divi&&)" << std::endl;
+	}
+
+	divi &operator=(const divi &other)
+	{
+		if(this != &other) {
+			lhs_    = other.lhs_;
+			rhs_    = other.rhs_;
+			answer_ = other.answer_;
+		}
+		std::cout << "operator=(const divi&)" << std::endl;
+		return *this;
+	}
+
+	divi &operator=(divi &&other) noexcept
+	{
+		if(this != &other) {
+			lhs_    = std::move(other.lhs_);
+			rhs_    = std::move(other.rhs_);
+			answer_ = std::move(other.answer_);
+		}
+		std::cout << "operator=(divi&&)" << std::endl;
+		return *this;
+	}
+
+	~divi();
+
+	virtual void reslut() override;
+
+private:
+	/* data */
+	T1 lhs_;
+	T2 rhs_;
+	T3 answer_;
+};
+
+TITLE
+divi<T1, T2, T3>::divi(T1 lhs, T2 rhs)
+    : lhs_(lhs)
+    , rhs_(rhs)
+{
+	std::cout << "divi(T1, T2)" << std::endl;
+}
+
+TITLE
+divi<T1, T2, T3>::~divi()
+{
+	std::cout << "~divi()" << std::endl;
+}
+
+TITLE
+void divi<T1, T2, T3>::reslut()
+{
+	answer_ = lhs_ / rhs_;
+	std::cout << answer_ << std::endl;
+}
+
+#endif
