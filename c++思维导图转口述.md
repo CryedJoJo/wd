@@ -1,8 +1,8 @@
-# part 1
+# part 1 面向对象
 
 c++的面向对象是说c++具有封装、继承、多态这三大特征
 
-## part 1.1
+## part 1.1 封装
 c++的封装是说，c++通过类 将数据和对数据的操作打包在一起，通过public、protected、private访问控制关键字控制外部可见性，只提供特定的接口给外部访问，保证数据的安全。
 
 c++的类有六大函数和四大数据成员。
@@ -27,7 +27,7 @@ const成员函数就是函数的最末尾用const修饰的函数，如果一个�
 前三个在初始化列表中初始化，占对象空间，静态数据成员在类内声明、类外定义并初始化，不占对象空间。
 这四大数据成员中，前三个都与类对象的构造相关，在构造时需要被初始化，静态数据成员在类外定义时初始化，不随对象构造。
 
-## part 1.2
+## part 1.2 继承
 然后是c++面向对象中的的继承特性
 
 继承是说，派生类通过三种继承方式继承基类，继承可以实现代码复用。类内部通过public、protected、private三种访问控制关键字约束数据或接口的可见级别，同时三个关键字在继承时也表示不同的继承关系。
@@ -41,7 +41,7 @@ public继承时，派生类继承基类的所有数据和方法保持原有属�
 
 另外，c++11中，在类的声明后加final关键字，可以阻止该类被进一步继承。
 
-## part 1.3
+## part 1.3 多态
 然后就是c++面向对象中的多态特性。
 
 多态是指同名接口，在不同的调用场景下表现出不同的行为。这里需要区分三个概念，分别是重载、重写也就是覆盖、隐藏也就是重定义。重载是同一作用域内，函数名相同，参数不同构成重载；重写是派生类重写基类中的虚函数；隐藏是基类与派生类之间，函数名相同但参数列表不同的函数，以及函数名和参数都相同但不是虚函数的函数，都构成隐藏。
@@ -72,11 +72,11 @@ public继承时，派生类继承基类的所有数据和方法保持原有属�
 
 最后就是带虚函数的内存布局，也就是上面说的含有虚函数的对象头部有一个vptr指向虚表。
 
-# part 2
+# part 2 STL
 
 然后是STL部分，STL是标准模板库，包括容器、算法、迭代器、空间配置器、适配器、仿函数这六大组件。
 
-## part 2.1
+## part 2.1 容器
 首先是容器，容器分为序列式容器、关联式容器和无序关联式容器三大类。
 
 序列式容器有vector、deque、list、array。vector是动态扩容数组，内部存放了三个指针，分别指向堆数据空间的头部、最后一个元素的下一个位置以及堆空间容量的最后，vector是存在迭代器失效问题的。deque是双端队列，由中控器数组统一管理，底层是由许多等长的连续内存组成，中控器数组中存的是每块连续内存的首地址，回收和分配新空间都是从两边进行，不存在vector的数据迁移问题，deque在中间插入或删除元素会使所有迭代器失效。list是双向循环链表，插入操作不会使任何迭代器失效，删除操作只会使被删除元素的迭代器失效。array就是定长数组。
@@ -89,63 +89,63 @@ list还有一些特殊接口，sort、reverse、unique、merge、splice、remove
 
 无序关联式容器底层用hash表存储，数据无序，有unordered_set、unordered_map、unordered_multiset、unordered_multimap。
 
-## part 2.2
+## part 2.2 算法
 然后是算法。STL中的算法是泛型算法，通过迭代器对容器中的数据进行操作，算法和容器之间通过迭代器建立联系。
 
-## part 2.3
+## part 2.3 迭代器
 然后是迭代器。迭代器是容器对外提供访问容器内部数据用的，迭代器可能是容器所存放元素的原生指针，也可能是一个类。根据容器提供的迭代器能力的不同分为四类，1、输入、输出迭代器 2、前向迭代器 3、双向迭代器 4、随机访问迭代器。算法针对容器提供的迭代器能力提出了使用约束，如果某个泛型算法接口要求传入一个随机访问迭代器，提供非随机访问迭代器的容器就不能使用这个算法。
 
-## part 2.4
+## part 2.4 空间配置器
 然后是空间配置器。空间配置器的核心思想是将空间申请和对象构建分开。用法上主要通过allocate、deallocate、construct、destroy四个接口来申请和释放空间。原理上分为一级空间配置器和二级空间配置器，一级空间配置器直接走malloc；二级空间配置器，大于128B走malloc，小于128B走16维的自由链表加内存池，这样解决了两个问题，解决1是内存碎片，解决2是用户态、内核态切换开销。源码上看，allocate是分配空间的函数，流程是取下标、向上取整、切割、分配空间；deallocate是重新链回自由链表；construct是定位new表达式；destroy是销毁对象。
 
-## part 2.5
+## part 2.5 适配器
 然后是适配器。适配器的定义是，将一个类的接口转换成另一个类的接口，使得原本接口不兼容的类能够协同工作。适配器分为容器适配器、迭代器适配器、函数适配器三类。容器适配器有stack、queue、priority_queue，其中stack底层用deque实现，因为deque不存在扩容、移动元素的问题；queue底层也是用deque实现；priority_queue底层用vector实现，因为可以基于vector方便地实现堆结构。迭代器适配器有back_inserter/back_insert_iterator、front_inserter/front_insert_iterator、inserter/insert_iterator。函数适配器有bind1st/bind2nd、bind、mem_fn。
 
-## part 2.6
+## part 2.6 仿函数
 然后是仿函数。仿函数是可调用对象，也就是callable。包括std::bind，编译器会在底层生成一个匿名的函数对象；lambda表达式，通过[]捕获局部的数据；以及重载了()运算符的类。
 
-# part 3
+# part 3 c++11
 
 接下来是c++11部分，主要是移动语义和智能指针。
 
-## part 3.1
+## part 3.1 移动语义
 移动语义中有右值引用和左值引用。右值引用只能绑定右值，不能绑定左值；左值引用只能绑定左值，不能绑定右值，但是const左值引用既可以绑定左值也可以绑定右值。然后是移动赋值运算符函数，它也有四步骤，判断自移动、释放左操作数、浅拷贝、返回*this，和拷贝赋值运算符函数的区别就是这里是浅拷贝。最后是std::move，它的功能是将左值属性改变为右值属性，并没有字面意思移动的功能，它需要配合移动语义才有意义，即使用std::move的地方，应该是需要绑定右值的地方，并且需要确定被std::move的东西，不会有所有权冲突，也就是说被std::move之后的对象处于有效但内容未定义的状态，后续代码不应再使用这个对象。
 
-## part 3.2
+## part 3.2 智能指针
 智能指针的核心是RAII思想，构造函数中初始化资源、析构函数中释放资源，比如锁的实现unique_lock和lock_guard也是RAII思想的体现。auto_ptr是c++98引入的，因为它把移动所有权和复制混在了一起，所以c++11后弃用了。unique_ptr是独占式所有权。shared_ptr是共享式所有权，内部使用引用计数。weak_ptr不增加引用计数，用于解决shared_ptr的循环引用问题。智能指针删除器是说，智能指针析构时，默认是执行delete来回收托管的对象，非默认情况就是给智能指针构造函数的第二个参数传入一个可调用对象用于释放特定托管类型的对象，可以是函数对象、lambda，比如unique_ptr<FILE, decltype(&fclose)> up(fopen("file.txt", "r+"), fclose)。智能指针的误用有两个，一是多个unique_ptr托管同一个地址，解决措施是人为避免；二是函数直接return shared_ptr(this)，解决措施是继承std::enable_shared_from_this<A>，return shared_from_this()。
 
-# part 4
+# part 4 std::string
 
 然后是std::string部分。std::string是c++标准库的字符串类，重点是COW写时复制，也就是多个string对象共享同一块字符串数据，当某个string对象需要修改数据时，才真正拷贝一份数据出来进行修改，避免了不必要的拷贝开销。不过需要注意，COW与C++11的标准要求存在冲突，C++11之后的主流实现已经不再使用COW。
 
-# part 5
+# part 5 基础知识点
 
 然后是基础知识点部分，包括引用指针的区别、强转、类的作用域、友元、IO操作。
 
-## part 5.1
+## part 5.1 引用和指针的区别
 引用和指针的区别可以从四个维度来说。指针的本质是存放的是目标的地址，占用内存空间，可以改变指向，不需要在声明时初始化；引用的本质是给对象取的别名，语义上不占用内存空间，不能改变指向，需要在声明时初始化。
 
-## part 5.2
+## part 5.2 强转
 强转主要是static_cast<目标类型>(对象)。static_cast用于具有明确转换关系的类型转换，例如基本类型之间的转换、派生类到基类的向上转型，以及某些基类到派生类的向下转型。它主要在编译期检查转换是否合法，但不会像dynamic_cast一样，在运行时检查多态对象的实际类型，因此向下转型时必须由程序员保证对象类型正确。
 
-## part 5.3
+## part 5.3 类的作用域
 类的作用域分为全局类、内部类、块作用域类。内部类需要注意，在C++中，内部类与外部类是相互独立的类，彼此不能访问对方的私有成员，除非将内部类声明为外部类的友元。内部类的应用有两个，一是单例模式的自动释放，实现方式有友元、内部类+静态数据成员、atexit、pthread_once+atexit；二是string类的operator[]访问运算符无法判断是取值还是赋值操作时，使用内部代理类。
 
-## part 5.4
+## part 5.4 友元
 友元分为友元类和友元函数两种。友元不是类的成员函数，但是被声明为友元后可以访问类的私有成员和保护成员。
 
-## part 5.5
+## part 5.5 IO操作
 IO操作包括标准IO、文件IO、串IO。首先流的四种状态是good、bad、fail、eof，其中fail状态可以通过clear和ignore恢复。标准IO有cin、cout、cerr、clog。文件IO操作有ifstream、ofstream、fstream，ifstream是文件输入流，文件需要存在，不存在会打开失败；ofstream是文件输出流，文件不存在就创建文件，文件存在的话会清空文件；fstream文件不存在会打开失败，还有getline、close、tellg/tellp、seekg/seekp，以及打开模式ate、app。串IO操作有istringstream、ostringstream、stringstream，比如istringstream iss(line)。
 
-# part 6
+# part 6 提高
 
 最后是提高部分，包括设计模式、c++线程库、Reactor。
 
-## part 6.1
+## part 6.1 设计模式
 设计模式中首先是类与类的关系，有继承、关联、组合、聚合、依赖五种关系。然后是OOD设计原则，主要是SOLID原则，SRP对应职责怎么划分、OCP对应如何面对变化、LSP对应继承怎么正确使用、ISP对应接口怎么划分、DIP对应依赖怎么建立；另外还有LoD对应对象之间知道多少、CRP对应代码复用采用什么关系。具体来说，S是Single responsibility principle单一职责原则，一个类只负责一件事，一个类应该尽量只有一个主要的变化原因；O是Open/closed principle开闭原则，对扩展开放，对修改关闭；L是Liskov substitution principle里氏替换，使用基类的地方都应该能够使用派生类；I是Interface segregation principle接口隔离，接口要小而专一，不要强迫一个类依赖它根本用不到的接口；D是Dependency inversion principle依赖倒置，高层模块不要依赖具体实现，要依赖抽象。另外还有迪米特法则Law of Demeter，也就是最少知识原则Least knowledge principle，不要让一个类过度了解其他类内部的结构；Composite Reuse Principle组合复用原则，不要滥用继承，优选组合而不是继承。
 
-## part 6.2
+## part 6.2 c++线程库
 c++线程库包括thread、mutex、lock_guard、unique_lock、atomic、condition_variable，其中atomic底层一般基于CAS实现。
 
-## part 6.3
+## part 6.3 Reactor
 Reactor的技术点有TCP、socket、IO多路复用。IO多路复用有select、poll、epoll，其中select使用位图。Reactor+ThreadPool有v4、v5版本，使用了eventfd/timerfd。
