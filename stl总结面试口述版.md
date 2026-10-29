@@ -14,14 +14,14 @@ STL 六大组件自底向上依次是：空间配置器、容器、迭代器、�
 
 ## 空间配置器
 
-空间配置器最核心的思想就是将内存申请回收和对象生命周期解耦。内存管理分为分配、构造、析构、释放。
+空间配置器最核心的思想就是将内存申请回收和对象生命周期解耦。内存管理分为分配、构造、析构、释放这四种操作。
 具体来说，容器模板默认传入std::allocator 作为空间配置器。容器需要内存时，通过空间配置器的 allocate 申请原始内存，再通过 construct 在这块内存上构造对象；销毁对象时先通过 destroy 调用对象析构函数，最后通过 deallocate 释放内存。
-当前c++的STL沿袭了SGI STL的一些思想，就SGI STL来说，有意思的是它采用两级空间配置器，以128字节作为分界线。申请超过128字节的大内存时，走一级空间配置器，直接向系统申请和释放；申请内存小于等于128字节的小内存，走二级空间配置器，依靠内存池加上自由链表统一管理，提前批量向系统申请一大块内存，切分成不同规格的小块挂载在自由链表上，分配时直接从链表取出，归还时放回链表。这套机制可以减少频繁的系统调用，缓解小对象带来的内存碎片问题，提升小内存分配的效率。当前标准stl没有使用两级空间配置器，默认的空间配置器只统一向系统申请，因为想sig stl这种语言层面的细粒度内存管理都已经下沉到了更底层的操作系统了，所以标准stl默认空间配置器采用直接向系统申请的方式获取内存。
+当前c++的STL沿袭了SGI STL的一些思想，就SGI STL来说，有意思的是它采用两级空间配置器，以128字节作为分界线。申请超过128字节的大内存时，走一级空间配置器，直接向系统申请和释放；申请小于等于128字节的小内存时，走二级空间配置器，依靠内存池加上自由链表统一管理，提前批量向系统申请一大块内存，切分成不同规格的小块挂载在自由链表上，分配时直接从链表取出，归还时放回链表。这套机制可以减少频繁的系统调用，缓解小对象带来的内存碎片问题，提升小内存分配的效率。当前标准stl没有使用两级空间配置器，默认的空间配置器只统一向系统申请内存，因为想sig stl这种语言层面的细粒度内存管理都已经下沉到了更底层的操作系统了，所以标准stl默认空间配置器采用直接向系统申请的方式获取内存。
 
 ## 迭代器
 
-迭代器本质是一个类或者一个原生类型的指针。对于类类型的迭代器，内部保存了一个容器节点类型的指针，并且重载了针对访问容器的加加、减减等运算符来模拟指针的行为；
-而所有容器在内部都会typedef自己专属的iterator和const_iterator类型；因此通过这种容器和迭代器之间双向的关联就完成容器和迭代器的绑定。这样达到的效果就是，迭代器屏蔽了容器的内部实现，对外统一提供自增、自减、解引用等接口，让外部不用感知容器的内部数据结构也能访问容器的数据。
+迭代器本质是一个类或者一个原生类型的指针。对于类类型的迭代器，内部保存了一个容器节点类型的指针，并且重（chong）载了针对访问容器的加加、减减等运算符来模拟指针的行为；
+而所有容器在内部都会typedef自己专属的iterator和const iterator类型；因此通过这种容器和迭代器之间双向的关联就完成容器和迭代器的绑定。这样达到的效果就是，迭代器屏蔽了容器的内部实现，对外统一提供自增、自减、解引用等接口，让外部不用感知容器的内部数据结构也能访问容器的数据。
 
 具体拿加加运算符来说，vector底层是连续数组，它的iterator就是T*的原生指针，执行++操作时，就是让原生指针进行地址++操作；
 像list的迭代器 内部存的就是容器节点指针，执行++操作的时后，实际是在调用底层list节点的++接口到下一个链表节点；
@@ -32,23 +32,23 @@ map底层是红黑树，迭代器对象保存红黑树节点指针，++操作会
 迭代器按能力分为 输入迭代器、输出迭代器、前向迭代器、双向迭代器、随机访问迭代器这五种类别。
 只有随机访问迭代器能支持 +n、-n、下标操作这种跳跃访问，而其他迭代器只能一步一步遍历。
 
-而迭代器萃取机制依靠的是iterator_traits这个萃取模板类实现的，它可以提取出迭代器内嵌的五种类型，分别是迭代器类别、value_type迭代器指向的元素类型、pointer指向元素的指针类型、reference元素的引用类型 和difference_type两个迭代器之间距离的类型，同时这个萃取模板做了原生指针的偏特化，让普通原生指针也可以被当作迭代器完成属性萃取，比如vector的迭代器就是原生指针。
+而迭代器萃取机制依靠的是iterator traits这个萃取模板类实现的，它可以提取出迭代器内嵌的五种类型，分别是迭代器类别、value type迭代器指向的元素类型、pointer指向元素的指针类型、reference元素的引用类型 和difference type两个迭代器之间距离的类型，同时这个萃取模板做了原生指针的偏特化，让普通原生指针也可以被当作迭代器完成属性萃取，比如vector的迭代器就是原生指针。
 
 萃取机制和迭代器、容器、算法的关联逻辑是这样的：容器定义迭代器的时候，迭代器内部都会内嵌这五种类型；
-算法内部通过iterator_traits拿到这些萃取出来的类型之后，在编译阶段，编译器根据萃取得到的迭代器类别，派发不同版本的算法逻辑，整个过程没有运行时开销。
+算法内部通过iterator traits拿到这些萃取出来的类型之后，在编译阶段，编译器根据萃取得到的迭代器类别，派发不同版本的算法逻辑，整个过程没有运行时开销。
 比如调用 distance算法的时候，如果传入的是随机访问迭代器，那么萃取得到的就是随机访问迭代器类型，这时直接用尾迭代器减去首迭代器就行，这种情况distance的复杂度是O(1)的；
-如果萃取到的迭代器类型是双向迭代器，就循环自增一步步统计距离，此时distance的复杂度就变成O(n)。
+如果萃取到的迭代器类型是双向迭代器，就循环自增一步步统计距离，这种情况distance的复杂度就变成O(n)。
 
-（除此之外还有类型萃取type_traits，用来萃取数据是否是POD平凡类型，进而优化copy和destroy逻辑，如果是平凡类型就直接memcpy，不需要逐个调用构造、析构函数。（这条符合SGI STL））
+（除此之外还有类型萃取type traits，用来萃取数据是否是POD平凡类型，进而优化copy和destroy逻辑，如果是平凡类型就直接memcpy，不需要逐个调用构造、析构函数。（这条符合SGI STL））
 
 
 ## 容器
 
-STL所有容器分为序列容器和关联容器两大类，容器不会直接暴露自身的内部结构，它统一向外提供迭代器。
+STL所有容器分为序列式容器和关联式容器两大类，容器不会直接暴露自身的内部结构，它统一向外提供迭代器。
 
-序列式容器主要包含vector、list、deque。它们的常用接口有begin、end、push_back、pop_back、erase、insert、size、empty、clear等，使用的时候需要重点留意迭代器失效问题。
+序列式容器主要包含vector、list、deque。它们的常用接口有begin、end、push back、pop back、erase、insert、size、empty、clear等，使用的时候需要重点留意迭代器失效问题。
 
-vector底层是连续数组，内部维护start、finish、end_of_storage三个指针，分别标记起始位置、有效数据末尾、容量末尾。
+vector底层是连续数组，内部维护start、finish、end of storage三个指针，分别标记起始位置、有效数据末尾、容量末尾。
 当容量不足时就会触发扩容，开辟一块更大的连续空间，拷贝旧数据，析构旧对象，再释放原来的内存。
 它的优点是支持随机访问，查询遍历速度快；缺点是在中间位置增删元素需要移动大量的元素，效率偏低，并且扩容、insert、erase操作都会让当前位置以及后面所有迭代器失效。
 
@@ -58,8 +58,8 @@ deque储存数据使用的是分段的连续内存，这些分段内存由中控
 跨分段找元素时要计算偏移，所以访问速度相比vector会慢一些，但它扩容的时候只需要修改中控器数据和构建新的分段，不需要搬迁全部数据，所以扩容上比vector快很多；
 deque头尾插入不会造成迭代器失效，但在容器中间插入或者删除元素，也会导致迭代器失效。
 
-关联式容器包含set、map、multiset、multimap、unordered_set、unordered_map、unordered_multiset、unordered_multimap；
-常用接口有find、insert、erase、count、lower_bound、upper_bound，使用时同样要关注迭代器失效问题。
+关联式容器包含set、map、multiset、multimap、unordered set、unordered map、unordered multiset、unordered multimap；
+常用接口有find、insert、erase、count、lower bound、upper bound，使用时同样要关注迭代器失效问题。
 
 set、multiset、map、multimap底层都是红黑树，容器内部有序。
 set的元素唯一，multiset允许存放重复元素；
@@ -81,14 +81,14 @@ unordered系列容器底层是哈希表，采用开链法处理哈希冲突，�
 适配器类似于套壳，它本身不实现底层逻辑，所有功能都依托底层组件，只是对外更换一套API。
 适配器一共分为三类：容器适配器、迭代器适配器、仿函数适配器。
 
-容器适配器包含stack、queue、priority_queue，它们都只是封装已有的容器：
+容器适配器包含stack、queue、priority queue，它们都只是封装已有的容器：
 stack默认基于deque，遵循后进先出，虽然vector感觉更符合栈的特性，但是vector扩容比deque费资源，所以我觉这是stack底层默认没用vector的原因；
 queue默认也是基于deque，它遵循先进先出；
-priority_queue默认基于vector，它的底层用大根堆算法实现默认排序，因为堆排序的逻辑实现依赖于连续的内存地址，所以priority_queue用的是vector。
+priority queue默认基于vector，它的底层用大根堆算法实现默认排序，因为堆排序的逻辑实现依赖于连续的内存地址，所以priority queue用的是vector。
 
-迭代器适配器典型代表是反向迭代器reverse_iterator和插入迭代器，反向迭代器封装正向迭代器，实现反向遍历；插入迭代器会把赋值操作转换成元素插入
+迭代器适配器典型代表是反向迭代器reverse iterator和插入迭代器，反向迭代器封装正向迭代器，实现反向遍历；插入迭代器会把赋值操作转换成元素插入
 
-仿函数适配器比如std::bind绑定函数的部分参数，std::mem_fn可以将成员函数指针适配成可调用对象等。
+仿函数适配器比如std::bind绑定函数的部分参数，std::mem fn可以将成员函数指针适配成可调用对象等。
 
 ## 仿函数
 
@@ -105,28 +105,28 @@ priority_queue默认基于vector，它的底层用大根堆算法实现默认排
 任意一个STL算法，都可以从输入条件、迭代器能力、核心逻辑、设计原因、时间复杂度、是否修改元素、是否改变容器结构、迭代器是否失效这几个角度入手。
 
 ### 泛型算法有很多，可以按功能划分：
-查找类包含find、find_if、count、count_if、lower_bound、upper_bound、binary_search；
-修改重排类包含copy、copy_if、replace、replace_if、swap、reverse、rotate；
-删除迁移类包含remove、remove_if；
-排序比较类包含sort、stable_sort、partial_sort、nth_element、merge；
-遍历类包含for_each、transform；
-集合运算类包含set_union、set_intersection、set_difference。
+查找类包含find、find if、count、count if、lower bound、upper bound、binary search；
+修改重排类包含copy、copy if、replace、replace if、swap、reverse、rotate；
+删除迁移类包含remove、remove if；
+排序比较类包含sort、stable sort、partial sort、nth element、merge；
+遍历类包含for each、transform；
+集合运算类包含set union、set intersection、set difference。
 
 ### 使用泛型算法有很多高频坑点
 
-最经典的就是remove和remove_if，它们并不会真正删除容器内的元素，仅仅是把符合保留条件的元素向前移动，返回新的逻辑尾迭代器，尾部的元素只是逻辑废弃，内存还保留着，必须搭配容器的erase，也就是erase-remove惯用法才能完成真正删除。
+最经典的就是remove和remove if，它们并不会真正删除容器内的元素，仅仅是把符合保留条件的元素向前移动，返回新的逻辑尾迭代器，尾部的元素只是逻辑废弃，内存还保留着，必须搭配容器的erase，也就是erase-remove惯用法才能完成真正删除。
 
-常用的核心算法里，lower_bound在有序区间找到第一个大于等于目标值的位置，upper_bound找到第一个大于目标值的位置，这两个迭代器围成的区间，就包含了所有等于目标值的元素。binary_search、lower_bound、upper_bound的使用前提是区间有序，无序区间得到的结果是错误的；
+常用的核心算法里，lower bound在有序区间找到第一个大于等于目标值的位置，upper bound找到第一个大于目标值的位置，这两个迭代器围成的区间，就包含了所有等于目标值的元素。binary search、lower bound、upper bound的使用前提是区间有序，无序区间得到的结果是错误的；
 
 find是线性遍历查找，如果区间有序，优先使用二分系列算法，效率更高。
 
 STL的sort是混合排序实现，一般场景使用快排；递归深度过大的时候切换成堆排，规避最坏情况的风险；对于长度很小的数组，改用插入排序提升速度。sort要求传入随机访问迭代器，所以list不能直接使用全局sort，只能调用list自身提供的sort成员函数。
-table_sort可以保证相等元素的相对顺序不变，普通sort不保证，stable_sort的开销也更大；
+table sort可以保证相等元素的相对顺序不变，普通sort不保证，stable sort的开销也更大；
 
-除此之外还有这些常见问题：不要在for_each中随意增删容器元素，增删会引发迭代器失效，造成程序崩溃；
+除此之外还有这些常见问题：不要在for each中随意增删容器元素，增删会引发迭代器失效，造成程序崩溃；
 
 泛型算法是独立的函数，它只操作迭代器区间，感知不到容器本身，没有办法直接修改容器的容量和节点数量，真正增减元素只能依靠容器自己的erase、insert接口；
-stransform只会完成写入操作，不会自动扩容目标容器，如果目标空间不足会发生越界，一般可以搭配back_inserter插入迭代器使用；
+stransform只会完成写入操作，不会自动扩容目标容器，如果目标空间不足会发生越界，一般可以搭配back inserter插入迭代器使用；
 
 ## 算法
 
@@ -136,12 +136,12 @@ stransform只会完成写入操作，不会自动扩容目标容器，如果目�
 
 ### 泛型算法有很多，可以按功能划分：
 
-查找类包含find、find_if、count、count_if、lower_bound、upper_bound、binary_search；
-修改重排类包含copy、copy_if、replace、replace_if、reverse、rotate、swap；
-删除类包含remove、remove_if；
-排序比较类包含sort、stable_sort、partial_sort
-有序序列合并与集合运算包含merge、set_union
-遍历类包含for_each、transform
+查找类包含find、find if、count、count if、lower bound、upper bound、binary search；
+修改重排类包含copy、copy if、replace、replace if、reverse、rotate、swap；
+删除类包含remove、remove if；
+排序比较类包含sort、stable sort、partial sort
+有序序列合并与集合运算包含merge、set union
+遍历类包含for each、transform
 
 ### 使用泛型算法有很多高频坑点
 
@@ -149,16 +149,16 @@ stransform只会完成写入操作，不会自动扩容目标容器，如果目�
 
 泛型算法是独立的函数，它通常只操作迭代器区间，不直接管理容器本身，无法直接修改容器的容量和节点数量；真正增减元素要使用容器自己的erase、insert等接口，或者使用插入迭代器。
 
-最经典的就是remove和remove_if，它们不会真的删除容器元素，只是把符合条件的元素向前移动，返回新的逻辑尾迭代器，尾部的元素仍然属于容器，只是其值不再需要关注，内存也不会释放这些空间，因此必须搭配容器的erase才能真的删除元素
+最经典的就是remove和remove if，它们不会真的删除容器元素，只是把符合条件的元素向前移动，返回新的逻辑尾迭代器，尾部的元素仍然属于容器，只是其值不再需要关注，内存也不会释放这些空间，因此必须搭配容器的erase才能真的删除元素
 
-transform 只会按照目标迭代器写入结果，不会自动扩容普通目标容器。如果目标区间没有足够的可写元素，就会导致未定义行为。一般可以搭配back_inserter插入迭代器使用；也可以先让目标容器reserve足够容量，再使用其有效迭代器写入
+transform 只会按照目标迭代器写入结果，不会自动扩容普通目标容器。如果目标区间没有足够的可写元素，就会导致未定义行为。一般可以搭配back inserter插入迭代器使用；也可以先让目标容器reserve足够容量，再使用其有效迭代器写入
 
-for_each 遍历过程中随意增删当前遍历的容器元素，因为插入或删除可能导致某些容器的迭代器失效；
+for each 遍历过程中随意增删当前遍历的容器元素，因为插入或删除可能导致某些容器的迭代器失效；
 
 #### 查找方面：
 
-常用的核心算法里，lower_bound找到有序区间第一个不小于目标值的位置，upper_bound找到第一个大于目标值的位置，这两个迭代器围成的区间，就包含了所有与目标值等价的元素；
-而binary_search、lower_bound、upper_bound这些算法使用默认比较器时，区间必须满足相应的有序条件，否则结果不可靠
+常用的核心算法里，lower bound找到有序区间第一个不小于目标值的位置，upper bound找到第一个大于目标值的位置，这两个迭代器围成的区间，就包含了所有与目标值等价的元素；
+而binary search、lower bound、upper bound这些算法使用默认比较器时，区间必须满足相应的有序条件，否则结果不可靠
 
 find是线性遍历查找，如果区间满足二分查找的前提，优先使用二分系列算法通常更高效。对于随机访问迭代器，二分查找的时间复杂度通常为O(logN)；对于list等双向迭代器，虽然比较次数为O(logN)，但迭代器移动次数可能达到O(N)。
 
@@ -166,7 +166,7 @@ find是线性遍历查找，如果区间满足二分查找的前提，优先使�
 
 STL的sort一般采用混合排序策略，内部结合快速排、堆排和插入排序等算法，一般是依据萃取到的数据选择用什么排序规则；
 sort要求随机访问迭代器，所以list不能直接使用stl的sort，只能调用list自身的sort。
-stable_sort可以保证相等元素的相对顺序不变，普通sort不保证，但是stable_sort可能需要额外内存空间。
+stable sort可以保证相等元素的相对顺序不变，普通sort不保证，但是stable sort可能需要额外内存空间。
 
 ## 总结
 
